@@ -27,12 +27,18 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.1.0",
     "@supabase/supabase-js": "^2.49.4",
+    "@types/multer": "^1.4.12",
+    "cloudinary": "^2.6.0",
+    "csrf": "^3.1.0",
+    "csrf-csrf": "^3.1.0",
+    "dotenv": "^16.5.0",
     "global": "^4.4.0",
     "make": "^0.8.1",
+    "multer": "^1.4.5-lts.2",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "supabase": "^2.20.5"
+    "supabase": "^2.20.12"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -78,5 +84,6 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
