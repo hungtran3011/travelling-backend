@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AccommodationsService } from './accommodations.service';
+import { CsrfGuard } from 'src/auth/csrf.guard';
 import { TablesInsert, TablesUpdate } from '../supabase/schema';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('Accommodations')
 @Controller('accommodations')
@@ -11,13 +13,15 @@ export class AccommodationsController {
   // =========== ACCOMMODATION ENDPOINTS ===========
 
   @Get()
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved all accommodations successfully.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getAllAccommodations() {
-    return this.accommodationsService.getAllAccommodations();
+    return this.accommodationsService.getAll();
   }
 
   @Get(':id')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved accommodation successfully.' })
   @ApiResponse({ status: 404, description: 'Accommodation not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -26,6 +30,15 @@ export class AccommodationsController {
   }
 
   @Post()
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer token for authentication.',
+  })
   @ApiResponse({ status: 201, description: 'Created accommodation successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -44,6 +57,11 @@ export class AccommodationsController {
   }
 
   @Put(':id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 200, description: 'Updated accommodation successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'Accommodation not found.' })
@@ -61,6 +79,11 @@ export class AccommodationsController {
   }
 
   @Delete(':id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted accommodation successfully.' })
   @ApiResponse({ status: 404, description: 'Accommodation not found.' })
@@ -72,6 +95,7 @@ export class AccommodationsController {
   // =========== ACCOMMODATION UNIT ENDPOINTS ===========
 
   @Get(':accommodationId/units')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved units successfully.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getUnitsByAccommodationId(@Param('accommodationId') accommodationId: string) {
@@ -79,6 +103,7 @@ export class AccommodationsController {
   }
 
   @Get('units/:id')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved unit successfully.' })
   @ApiResponse({ status: 404, description: 'Unit not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -87,6 +112,11 @@ export class AccommodationsController {
   }
 
   @Post('units')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 201, description: 'Created unit successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -95,6 +125,11 @@ export class AccommodationsController {
   }
 
   @Put('units/:id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 200, description: 'Updated unit successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'Unit not found.' })
@@ -107,6 +142,11 @@ export class AccommodationsController {
   }
 
   @Delete('units/:id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted unit successfully.' })
   @ApiResponse({ status: 404, description: 'Unit not found.' })
@@ -118,6 +158,7 @@ export class AccommodationsController {
   // =========== AMENITY ENDPOINTS ===========
 
   @Get('amenities')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved amenities successfully.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getAllAmenities() {
@@ -125,6 +166,7 @@ export class AccommodationsController {
   }
 
   @Get('amenities/:id')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved amenity successfully.' })
   @ApiResponse({ status: 404, description: 'Amenity not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -164,6 +206,7 @@ export class AccommodationsController {
   // =========== ACCOMMODATION AMENITY MAPPING ENDPOINTS ===========
 
   @Get(':id/amenities')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved accommodation amenities successfully.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getAmenitiesByAccommodationId(@Param('id') id: string) {

@@ -125,7 +125,6 @@ export type Database = {
           description: string | null
           id: string
           location: string | null
-          name: string | null
           rating: number | null
           type: string | null
           website: string | null
@@ -137,7 +136,6 @@ export type Database = {
           description?: string | null
           id?: string
           location?: string | null
-          name?: string | null
           rating?: number | null
           type?: string | null
           website?: string | null
@@ -149,7 +147,6 @@ export type Database = {
           description?: string | null
           id?: string
           location?: string | null
-          name?: string | null
           rating?: number | null
           type?: string | null
           website?: string | null
@@ -184,6 +181,38 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      media_places: {
+        Row: {
+          created_at: string
+          id: string
+          media_url: string | null
+          places_id: string
+          type: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          media_url?: string | null
+          places_id?: string
+          type?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          media_url?: string | null
+          places_id?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_places_places_id_fkey"
+            columns: ["places_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       places: {
         Row: {
@@ -404,6 +433,7 @@ export type Database = {
       }
       users: {
         Row: {
+          avatar_url: string | null
           birthday: string | null
           country: string | null
           email: string | null
@@ -414,6 +444,7 @@ export type Database = {
           province: string | null
         }
         Insert: {
+          avatar_url?: string | null
           birthday?: string | null
           country?: string | null
           email?: string | null
@@ -424,6 +455,7 @@ export type Database = {
           province?: string | null
         }
         Update: {
+          avatar_url?: string | null
           birthday?: string | null
           country?: string | null
           email?: string | null

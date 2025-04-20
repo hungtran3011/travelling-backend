@@ -1,13 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { supabase } from 'src/supabase/supabase';
-import { SightseeingServiceData } from './dto/sightseeing.dto';
+import { SightseeingServiceData, SightseeingPlaceWithDetails } from './dto/sightseeing.dto';
+import IPlace from 'src/places/places.service';
+import redisService from 'src/services/redis';
+
+// Define interfaces for the returned data types
+interface MediaPlace {
+  id: string;
+  media_url?: string | null;
+  places_id: string; // Changed from places_id to match database structure
+  type?: string | null;
+  created_at: string | null;
+}
 
 @Injectable()
-export class SightseeingService {
+export class SightseeingService implements IPlace {
     constructor() { }
 
     // Get all sightseeing places with linked data from places and sightseeing_services
-    async getSightseeing() {
+    async getAll(): Promise<SightseeingPlaceWithDetails[]> {
+        // Try to get from cache first
+        const cachedData = await redisService.get("sightseeing_places");
+        if (cachedData) {
+            return JSON.parse(cachedData) as SightseeingPlaceWithDetails[];
+        }
+
         const { data: sightseeingPlaces, error: sightseeingError } = await supabase
             .from('sightseeing_places')
             .select('*');
@@ -36,21 +53,40 @@ export class SightseeingService {
             throw servicesError;
         }
 
-        // Combine data from all tables
-        return sightseeingPlaces.map((sightseeingPlace) => {
-            const linkedPlace = places.find((place) => place.id === sightseeingPlace.id);
-            const linkedServices = services.filter((service) => service.place_id === sightseeingPlace.id);
+        // Combine data from all tables with proper type handling
+        const result: SightseeingPlaceWithDetails[] = sightseeingPlaces.map((sightseeingPlace) => {
+            const linkedPlace = places.find((place) => place.id === sightseeingPlace.id) || {};
+            
+            // Filter out services with null place_id and ensure each service matches SightseeingServiceData
+            const linkedServices: SightseeingServiceData[] = services
+                .filter(service => service.place_id === sightseeingPlace.id && service.place_id !== null)
+                .map(service => {
+                    return {
+                        ...service,
+                        place_id: service.place_id as string, // Force non-null type
+                    } as SightseeingServiceData;
+                });
 
             return {
                 ...sightseeingPlace,
                 ...linkedPlace,
                 services: linkedServices,
-            };
+            } as SightseeingPlaceWithDetails;
         });
+
+        // Cache the result
+        await redisService.set("sightseeing_places", JSON.stringify(result));
+        return result;
     }
 
     // Get a single sightseeing place by ID with linked data
-    async getSightseeingById(id: string) {
+    async getSightseeingById(id: string): Promise<SightseeingPlaceWithDetails> {
+        // Try to get from cache first
+        const cachedData = await redisService.get(`sightseeing_place_${id}`);
+        if (cachedData) {
+            return JSON.parse(cachedData) as SightseeingPlaceWithDetails;
+        }
+
         const { data: sightseeingPlace, error: sightseeingError } = await supabase
             .from('sightseeing_places')
             .select('*')
@@ -80,11 +116,36 @@ export class SightseeingService {
             throw servicesError;
         }
 
-        return {
+        const result: SightseeingPlaceWithDetails = {
             ...sightseeingPlace,
             ...place,
             services,
         };
+
+        // Cache the result
+        await redisService.set(`sightseeing_place_${id}`, JSON.stringify(result));
+        return result;
+    }
+
+    async getMediaById(id: string): Promise<MediaPlace[]> {
+        // Try to get from cache first
+        const cachedData = await redisService.get(`sightseeing_media_${id}`);
+        if (cachedData) {
+            return JSON.parse(cachedData) as MediaPlace[];
+        }
+
+        const { data: media, error: mediaError } = await supabase
+            .from('media_places')
+            .select('*')
+            .eq('place_id', id);
+
+        if (mediaError) {
+            throw mediaError;
+        }
+
+        // Cache the result
+        await redisService.set(`sightseeing_media_${id}`, JSON.stringify(media));
+        return media as MediaPlace[]; // Add explicit type cast here
     }
 
     // Create a new sightseeing place with linked place and services
@@ -128,11 +189,17 @@ export class SightseeingService {
             throw servicesError;
         }
 
-        return {
+        const result = {
             ...sightseeingPlace,
             ...place,
             services: servicesWithPlaceId,
         };
+
+        // Invalidate cache
+        await redisService.del("sightseeing_places");
+        await redisService.set(`sightseeing_place_${place.id}`, JSON.stringify(result));
+
+        return result;
     }
 
     // Update a sightseeing place, its linked place, and services
@@ -186,6 +253,10 @@ export class SightseeingService {
             throw servicesError;
         }
 
+        // Invalidate cache
+        await redisService.del("sightseeing_places");
+        await redisService.del(`sightseeing_place_${id}`);
+
         return {
             message: 'Sightseeing place updated successfully',
         };
@@ -219,6 +290,11 @@ export class SightseeingService {
         if (placeError) {
             throw placeError;
         }
+
+        // Invalidate cache
+        await redisService.del("sightseeing_places");
+        await redisService.del(`sightseeing_place_${id}`);
+        await redisService.del(`sightseeing_media_${id}`);
 
         return {
             message: 'Sightseeing place deleted successfully',

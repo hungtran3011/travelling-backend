@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { supabaseService, supabase } from 'src/supabase/supabase';
+import { CsrfService } from './csrf.service';
 
 @Injectable()
 export class AuthService {
-  constructor() {}
+  constructor(private readonly csrfService: CsrfService) {}
 
   async signUp(email: string, password: string) {
     const { data, error } = await supabaseService
@@ -28,6 +29,9 @@ export class AuthService {
     
     if (additionalError) throw additionalError;
     
+    // Generate CSRF token for this session
+    const csrfToken = this.csrfService.generateTokenValue();
+    
     return {
       session: {
         access_token: data.session?.access_token,
@@ -39,6 +43,7 @@ export class AuthService {
         phone: data.user?.phone,
       },
       additionalData,
+      csrfToken, // Include CSRF token in response
     };
   }
 
@@ -60,13 +65,17 @@ export class AuthService {
 
   async handleRefreshToken(refreshToken: string) {
     const { data, error } = await supabaseService.auth.refreshSession({
-      refresh_token: refreshToken,});
+      refresh_token: refreshToken,
+    });
     
     if (error) throw error;
-    return data;
-  }
-
-  async createCsrfToken() {
     
+    // Generate a new CSRF token when refreshing the session
+    const csrfToken = this.csrfService.generateTokenValue();
+    
+    return {
+      ...data,
+      csrfToken,
+    };
   }
 }

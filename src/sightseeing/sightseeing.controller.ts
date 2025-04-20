@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SightseeingService } from './sightseeing.service';
 import { SightseeingServiceData } from './dto/sightseeing.dto';
+import { CsrfGuard } from 'src/auth/csrf.guard';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('Sightseeing')
 @Controller('sightseeing')
@@ -9,13 +11,15 @@ export class SightseeingController {
   constructor(private readonly sightseeingService: SightseeingService) {}
 
   @Get()
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved all sightseeing places successfully.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getSightseeing() {
-    return this.sightseeingService.getSightseeing();
+    return this.sightseeingService.getAll();
   }
 
   @Get(':id')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved sightseeing place successfully.' })
   @ApiResponse({ status: 404, description: 'Sightseeing place not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -24,6 +28,15 @@ export class SightseeingController {
   }
 
   @Post()
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Created sightseeing place successfully.',
+  })
   @ApiResponse({ status: 201, description: 'Created sightseeing place successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -36,6 +49,11 @@ export class SightseeingController {
   }
 
   @Put(':id')
+  @UseGuards(CsrfGuard)
+  @ApiResponse({
+    status: 200,
+    description: 'Updated sightseeing place successfully.',
+  })
   @ApiResponse({ status: 200, description: 'Updated sightseeing place successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'Sightseeing place not found.' })
@@ -50,6 +68,11 @@ export class SightseeingController {
   }
 
   @Delete(':id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted sightseeing place successfully.' })
   @ApiResponse({ status: 404, description: 'Sightseeing place not found.' })

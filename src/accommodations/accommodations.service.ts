@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { supabase } from '../supabase/supabase';
 import { TablesInsert, TablesUpdate } from '../supabase/schema';
+import IPlace from 'src/places/places.service';
 
 @Injectable()
-export class AccommodationsService {
+export class AccommodationsService implements IPlace {
   // =========== ACCOMMODATION CRUD OPERATIONS ===========
   
-  async getAllAccommodations() {
+  async getAll() {
     const { data: accommodations, error: accommodationsError } = await supabase
       .from('accommodations')
       .select('*, places(*)');
@@ -54,6 +55,19 @@ export class AccommodationsService {
       units,
       amenities: accomAmenities,
     };
+  }
+
+  async getMediaById(id: string): Promise<any[]> {
+    const { data: media, error } = await supabase
+      .from('media_places')
+      .select('*')
+      .eq('place_id', id);
+      
+    if (error) {
+      throw new Error(`Error fetching media for place ID ${id}: ${error.message}`);
+    }
+    
+    return media;
   }
   
   async createAccommodation(
@@ -114,7 +128,12 @@ export class AccommodationsService {
       throw new Error(`Error creating accommodation amenities: ${amenitiesError.message}`);
     }
     
-    return this.getAccommodationById(place.id);
+    return {
+      ...accommodation,
+      place,
+      units: unitsWithAccomId,
+      amenities: accomAmenities,
+    };
   }
   
   async updateAccommodation(

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MulterModule } from '@nestjs/platform-express';
+// import { DefaultAdminModule } from 'nestjs-admin';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -28,6 +29,7 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
       dest: './uploads',
     }),
     RestaurantsModule,
+    // DefaultAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

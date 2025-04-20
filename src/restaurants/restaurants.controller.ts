@@ -1,7 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
+import { ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RestaurantsService } from './restaurants.service';
 import { TablesInsert, TablesUpdate } from '../supabase/schema';
+import { CsrfGuard } from 'src/auth/csrf.guard';
+import { Public } from 'src/auth/decorators/public.decorator';
+import { RestaurantsDocsApiResponse } from './docs/restaurants.docs';
 
 @ApiTags('Restaurants')
 @Controller('restaurants')
@@ -11,21 +14,33 @@ export class RestaurantsController {
   // =========== RESTAURANT ENDPOINTS ===========
 
   @Get()
-  @ApiResponse({ status: 200, description: 'Retrieved all restaurants successfully.' })
-  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  @Public()
+  @ApiResponse(RestaurantsDocsApiResponse.getAllRestaurants.success)
+  @ApiResponse(RestaurantsDocsApiResponse.getAllRestaurants.serverError)
   async getAllRestaurants() {
-    return this.restaurantsService.getAllRestaurants();
+    return this.restaurantsService.getAll();
   }
 
   @Get(':id')
-  @ApiResponse({ status: 200, description: 'Retrieved restaurant successfully.' })
-  @ApiResponse({ status: 404, description: 'Restaurant not found.' })
-  @ApiResponse({ status: 500, description: 'Internal server error.' })
-  async getRestaurantById(@Param('id') id: string) {
-    return this.restaurantsService.getRestaurantById(id);
+  @Public()
+  @ApiResponse(RestaurantsDocsApiResponse.getRestaurantById.success)
+  @ApiResponse(RestaurantsDocsApiResponse.getRestaurantById.notFound)
+  @ApiResponse(RestaurantsDocsApiResponse.getRestaurantById.serverError)
+  async getRestaurantById(
+    @Param('id') id: string,
+    @Query('simple') simple: boolean = false,
+    @Query('menu_items') menuItems: boolean = false,
+    @Query('tables') tables: boolean = false
+  ) {
+    return this.restaurantsService.getRestaurantById(id, simple, menuItems, tables);
   }
 
   @Post()
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 201, description: 'Created restaurant successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -44,6 +59,11 @@ export class RestaurantsController {
   }
 
   @Put(':id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 200, description: 'Updated restaurant successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'Restaurant not found.' })
@@ -57,6 +77,11 @@ export class RestaurantsController {
   }
 
   @Delete(':id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted restaurant successfully.' })
   @ApiResponse({ status: 404, description: 'Restaurant not found.' })
@@ -68,6 +93,7 @@ export class RestaurantsController {
   // =========== MENU ITEM ENDPOINTS ===========
 
   @Get(':restaurantId/menu-items')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved menu items successfully.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getMenuItemsByRestaurantId(@Param('restaurantId') restaurantId: string) {
@@ -75,6 +101,7 @@ export class RestaurantsController {
   }
 
   @Get('menu-items/:id')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved menu item successfully.' })
   @ApiResponse({ status: 404, description: 'Menu item not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -83,6 +110,11 @@ export class RestaurantsController {
   }
 
   @Post('menu-items')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 201, description: 'Created menu item successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -91,6 +123,11 @@ export class RestaurantsController {
   }
 
   @Put('menu-items/:id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 200, description: 'Updated menu item successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'Menu item not found.' })
@@ -103,6 +140,11 @@ export class RestaurantsController {
   }
 
   @Delete('menu-items/:id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted menu item successfully.' })
   @ApiResponse({ status: 404, description: 'Menu item not found.' })
@@ -114,6 +156,7 @@ export class RestaurantsController {
   // =========== RESTAURANT TABLE ENDPOINTS ===========
 
   @Get(':restaurantId/tables')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved restaurant tables successfully.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getTablesByRestaurantId(@Param('restaurantId') restaurantId: string) {
@@ -121,6 +164,7 @@ export class RestaurantsController {
   }
 
   @Get('tables/:id')
+  @Public()
   @ApiResponse({ status: 200, description: 'Retrieved restaurant table successfully.' })
   @ApiResponse({ status: 404, description: 'Restaurant table not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -129,6 +173,11 @@ export class RestaurantsController {
   }
 
   @Post('tables')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 201, description: 'Created restaurant table successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
@@ -137,6 +186,11 @@ export class RestaurantsController {
   }
 
   @Put('tables/:id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @ApiResponse({ status: 200, description: 'Updated restaurant table successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'Restaurant table not found.' })
@@ -149,6 +203,11 @@ export class RestaurantsController {
   }
 
   @Delete('tables/:id')
+  @UseGuards(CsrfGuard)
+  @ApiHeader({
+    name: 'x-csrf-token',
+    description: 'CSRF token for CSRF protection.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted restaurant table successfully.' })
   @ApiResponse({ status: 404, description: 'Restaurant table not found.' })
