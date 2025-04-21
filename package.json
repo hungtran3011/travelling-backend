@@ -20,6 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@adminjs/express": "^6.1.1",
+    "@adminjs/typeorm": "^5.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -30,20 +32,26 @@
     "@supabase/supabase-js": "^2.49.4",
     "@types/cookie-parser": "^1.4.8",
     "@types/multer": "^1.4.12",
+    "adminjs": "^7.8.15",
     "cloudinary": "^2.6.0",
     "cookie-parser": "^1.4.7",
     "csrf": "^3.1.0",
     "csrf-csrf": "^3.1.0",
     "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-formidable": "^1.2.0",
+    "express-session": "^1.18.1",
     "global": "^4.4.0",
     "make": "^0.8.1",
     "multer": "^1.4.5-lts.2",
-    "nestjs-admin": "^0.4.1",
     "passport-jwt": "^4.0.1",
+    "pg": "^8.14.1",
     "redis": "^4.7.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "supabase": "^2.20.12"
+    "supabase": "^2.20.12",
+    "tslib": "^2.8.1",
+    "typeorm": "^0.3.22"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

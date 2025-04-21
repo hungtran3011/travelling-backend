@@ -1,22 +1,25 @@
 import { createClient } from "redis";
+import { Logger } from "@nestjs/common";
 
 class RedisService {
     private client: ReturnType<typeof createClient>;
-    
+
     constructor() {
         this.client = createClient({
-        url: process.env.REDIS_URL,
+            url: process.env.REDIS_URL,
         });
-    
+        this.client.on("connect", () => {
+            Logger.log("Redis Client Connected");
+        });
         this.client.on("error", (err) => {
-        console.error("Redis Client Error", err);
+            Logger.error("Redis Client Error", err);
         });
     }
-    
+
     async connect() {
         await this.client.connect();
     }
-    
+
     async disconnect() {
         await this.client.quit();
     }
@@ -36,7 +39,7 @@ class RedisService {
     async exists(key: string) {
         return await this.client.exists(key);
     }
-    
+
     async expire(key: string, seconds: number) {
         await this.client.expire(key, seconds);
     }

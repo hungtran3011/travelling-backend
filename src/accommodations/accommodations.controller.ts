@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
-import { ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiResponse, ApiTags, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AccommodationsService } from './accommodations.service';
 import { CsrfGuard } from 'src/auth/csrf.guard';
+import { AuthGuard } from 'src/auth/auth.guard';
 import { TablesInsert, TablesUpdate } from '../supabase/schema';
 import { Public } from 'src/auth/decorators/public.decorator';
 
@@ -30,17 +31,76 @@ export class AccommodationsController {
   }
 
   @Post()
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
-  @ApiHeader({
-    name: 'Authorization',
-    description: 'Bearer token for authentication.',
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        placeData: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', example: 'Coastal Resort' },
+            description: { type: 'string', example: 'Beautiful beachfront resort with premium amenities.' },
+            location: { type: 'string', example: 'Miami Beach, FL' },
+            email: { type: 'string', format: 'email', example: 'contact@coastalresort.com' },
+            phone: { type: 'string', example: '+1234567890' },
+            website: { type: 'string', example: 'https://coastalresort.com' },
+            rating: { type: 'string', example: '4.8' },
+            place_types: { type: 'string', example: 'hotel,resort' },
+            currency: { type: 'string', example: 'USD' }
+          },
+          required: ['name', 'location']
+        },
+        accommodationData: {
+          type: 'object',
+          properties: {
+            checkin_time: { type: 'string', example: '15:00' },
+            checkout_time: { type: 'string', example: '11:00' },
+            property_type: { type: 'string', example: 'Hotel' },
+            star_rating: { type: 'integer', example: 5 }
+          },
+          required: ['property_type']
+        },
+        units: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', example: 'Deluxe Ocean View Suite' },
+              description: { type: 'string', example: 'Spacious suite with ocean views' },
+              capacity: { type: 'integer', example: 4 },
+              price_per_night: { type: 'number', example: 299.99 },
+              unit_type: { type: 'string', example: 'suite' },
+              beds: { type: 'string', example: '1 king, 1 sofa' },
+              bathrooms: { type: 'integer', example: 2 },
+              size: { type: 'integer', example: 120 },
+              size_unit: { type: 'string', example: 'sqm' }
+            }
+          }
+        },
+        amenities: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              amenityId: { type: 'string', example: 'amenity-123' },
+              price: { type: 'number', example: 25 }
+            }
+          }
+        }
+      }
+    }
   })
   @ApiResponse({ status: 201, description: 'Created accommodation successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async createAccommodation(
     @Body('placeData') placeData: TablesInsert<'places'>,
@@ -57,13 +117,40 @@ export class AccommodationsController {
   }
 
   @Put(':id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
+  })
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        placeData: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', example: 'Updated Resort Name' },
+            description: { type: 'string', example: 'Updated description' },
+            rating: { type: 'string', example: '5.0' }
+          }
+        },
+        accommodationData: {
+          type: 'object',
+          properties: {
+            checkin_time: { type: 'string', example: '14:00' },
+            checkout_time: { type: 'string', example: '12:00' },
+            star_rating: { type: 'integer', example: 5 }
+          }
+        }
+      }
+    }
   })
   @ApiResponse({ status: 200, description: 'Updated accommodation successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Accommodation not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async updateAccommodation(
@@ -79,13 +166,17 @@ export class AccommodationsController {
   }
 
   @Delete(':id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted accommodation successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Accommodation not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async deleteAccommodation(@Param('id') id: string) {
@@ -97,6 +188,7 @@ export class AccommodationsController {
   @Get(':accommodationId/units')
   @Public()
   @ApiResponse({ status: 200, description: 'Retrieved units successfully.' })
+  @ApiResponse({ status: 404, description: 'Accommodation not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getUnitsByAccommodationId(@Param('accommodationId') accommodationId: string) {
     return this.accommodationsService.getUnitsByAccommodationId(accommodationId);
@@ -112,26 +204,63 @@ export class AccommodationsController {
   }
 
   @Post('units')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
+  })
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        accommodation_id: { type: 'string', example: 'accom-123-def-456' },
+        name: { type: 'string', example: 'Standard Double Room' },
+        description: { type: 'string', example: 'Comfortable room with city view' },
+        capacity: { type: 'integer', example: 2 },
+        price_per_night: { type: 'number', example: 149.99 },
+        unit_type: { type: 'string', example: 'room' },
+        beds: { type: 'string', example: '1 queen' },
+        bathrooms: { type: 'integer', example: 1 },
+        size: { type: 'integer', example: 30 },
+        size_unit: { type: 'string', example: 'sqm' }
+      },
+      required: ['accommodation_id', 'name', 'capacity', 'price_per_night', 'unit_type']
+    }
   })
   @ApiResponse({ status: 201, description: 'Created unit successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async createUnit(@Body() unit: TablesInsert<'accom_units'>) {
     return this.accommodationsService.createUnit(unit);
   }
 
   @Put('units/:id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
+  })
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Deluxe Double Room' },
+        description: { type: 'string', example: 'Updated description' },
+        capacity: { type: 'integer', example: 3 },
+        price_per_night: { type: 'number', example: 179.99 }
+      }
+    }
   })
   @ApiResponse({ status: 200, description: 'Updated unit successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Unit not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async updateUnit(
@@ -142,13 +271,17 @@ export class AccommodationsController {
   }
 
   @Delete('units/:id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted unit successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Unit not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async deleteUnit(@Param('id') id: string) {

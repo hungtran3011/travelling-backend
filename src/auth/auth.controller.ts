@@ -1,4 +1,4 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, Res, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, HttpCode, HttpStatus, Res, Req, UseGuards, Logger } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignUpDto } from './dto/auth.dto';
 import { ApiResponse, ApiTags, ApiHeader } from '@nestjs/swagger';
@@ -50,13 +50,31 @@ export class AuthController {
     @Res() res: Response,
   ) {
     try {
+      // Use try/catch consistently instead of mixing with .then()
       const data = await this.authService.signIn(signInDto.email, signInDto.password);
-
-      if (!data || !data.session || !data.user) {
-        throw new Error('Invalid authentication response');
+      
+      // Log for debugging
+      Logger.log('Raw auth data received:', data);
+      
+      // Check data validity
+      if (!data) {
+        Logger.error('Authentication returned no data');
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Invalid credentials',
+        });
       }
-
-      // Set refresh token in HTTP-only cookie
+      
+      if (!data.session || !data.user) {
+        Logger.error('Invalid authentication response structure:', data);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Invalid authentication response',
+        });
+      }
+      
+      // The rest of the function remains the same
+      // Set cookies and return response...
       res.cookie('refresh_token', data.session.refresh_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -70,7 +88,8 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
       });
-
+      
+      Logger.log('Sign-in successful for user:', data.user.email);
       return res.status(HttpStatus.OK).json({
         message: 'Sign in successful',
         data: {
@@ -81,16 +100,26 @@ export class AuthController {
             id: data.user.id,
             email: data.user.email,
             phone: data.user.phone,
-            full_name: data.additionalData?.full_name || null,
-            birthday: data.additionalData?.birthday || null,
+            // full_name: data.additionalData?.full_name || null,
+            // birthday: data.additionalData?.birthday || null,
           },
-          csrfToken: data.csrfToken, // Send CSRF token to client
+          csrfToken: data.csrfToken,
         },
       });
-    } catch {
-      return res.status(HttpStatus.UNAUTHORIZED).json({
-        statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'Invalid credentials',
+    } catch (error: unknown) {
+      Logger.error('SignIn Error:', error);
+      
+      // Differentiate between types of errors
+      if (error instanceof Error && error.message.includes('Invalid credentials')) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Invalid email or password',
+        });
+      }
+      
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Error: ' + (error instanceof Error ? error.message : 'Unknown error'),
       });
     }
   }

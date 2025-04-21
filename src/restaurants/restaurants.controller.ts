@@ -1,10 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
-import { ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiHeader, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { RestaurantsService } from './restaurants.service';
 import { TablesInsert, TablesUpdate } from '../supabase/schema';
 import { CsrfGuard } from 'src/auth/csrf.guard';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { RestaurantsDocsApiResponse } from './docs/restaurants.docs';
+import { RestaurantsDocsApiResponse, RestaurantsDocsApiBody } from './docs/restaurants.docs';
+import { AuthGuard } from '../auth/auth.guard';
 
 @ApiTags('Restaurants')
 @Controller('restaurants')
@@ -23,6 +24,9 @@ export class RestaurantsController {
 
   @Get(':id')
   @Public()
+  @ApiQuery({ name: 'simple', required: false, type: Boolean, description: 'Return simplified data' })
+  @ApiQuery({ name: 'menu_items', required: false, type: Boolean, description: 'Include menu items' })
+  @ApiQuery({ name: 'tables', required: false, type: Boolean, description: 'Include tables' })
   @ApiResponse(RestaurantsDocsApiResponse.getRestaurantById.success)
   @ApiResponse(RestaurantsDocsApiResponse.getRestaurantById.notFound)
   @ApiResponse(RestaurantsDocsApiResponse.getRestaurantById.serverError)
@@ -36,13 +40,18 @@ export class RestaurantsController {
   }
 
   @Post()
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
+  @ApiBody(RestaurantsDocsApiBody.createRestaurant)
   @ApiResponse({ status: 201, description: 'Created restaurant successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async createRestaurant(
     @Body('placeData') placeData: TablesInsert<'places'>,
@@ -58,14 +67,19 @@ export class RestaurantsController {
     );
   }
 
-  @Put(':id')
-  @UseGuards(CsrfGuard)
+  @Post(':id')
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
+  @ApiBody(RestaurantsDocsApiBody.updateRestaurant)
   @ApiResponse({ status: 200, description: 'Updated restaurant successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Restaurant not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async updateRestaurant(
@@ -77,13 +91,17 @@ export class RestaurantsController {
   }
 
   @Delete(':id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted restaurant successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Restaurant not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async deleteRestaurant(@Param('id') id: string) {
@@ -95,6 +113,7 @@ export class RestaurantsController {
   @Get(':restaurantId/menu-items')
   @Public()
   @ApiResponse({ status: 200, description: 'Retrieved menu items successfully.' })
+  @ApiResponse({ status: 404, description: 'Restaurant not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getMenuItemsByRestaurantId(@Param('restaurantId') restaurantId: string) {
     return this.restaurantsService.getMenuItemsByRestaurantId(restaurantId);
@@ -110,26 +129,36 @@ export class RestaurantsController {
   }
 
   @Post('menu-items')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
+  @ApiBody(RestaurantsDocsApiBody.createMenuItem)
   @ApiResponse({ status: 201, description: 'Created menu item successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async createMenuItem(@Body() menuItem: TablesInsert<'restaurant_menu_item'>) {
     return this.restaurantsService.createMenuItem(menuItem);
   }
 
-  @Put('menu-items/:id')
-  @UseGuards(CsrfGuard)
+  @Post('menu-items/:id')
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
+  @ApiBody(RestaurantsDocsApiBody.updateMenuItem)
   @ApiResponse({ status: 200, description: 'Updated menu item successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Menu item not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async updateMenuItem(
@@ -140,13 +169,17 @@ export class RestaurantsController {
   }
 
   @Delete('menu-items/:id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted menu item successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Menu item not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async deleteMenuItem(@Param('id') id: string) {
@@ -158,6 +191,7 @@ export class RestaurantsController {
   @Get(':restaurantId/tables')
   @Public()
   @ApiResponse({ status: 200, description: 'Retrieved restaurant tables successfully.' })
+  @ApiResponse({ status: 404, description: 'Restaurant not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getTablesByRestaurantId(@Param('restaurantId') restaurantId: string) {
     return this.restaurantsService.getTablesByRestaurantId(restaurantId);
@@ -173,26 +207,36 @@ export class RestaurantsController {
   }
 
   @Post('tables')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
+  @ApiBody(RestaurantsDocsApiBody.createTable)
   @ApiResponse({ status: 201, description: 'Created restaurant table successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async createTable(@Body() table: TablesInsert<'restaurant_tables'>) {
     return this.restaurantsService.createTable(table);
   }
 
   @Put('tables/:id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
+  @ApiBody(RestaurantsDocsApiBody.updateTable)
   @ApiResponse({ status: 200, description: 'Updated restaurant table successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Restaurant table not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async updateTable(
@@ -203,13 +247,17 @@ export class RestaurantsController {
   }
 
   @Delete('tables/:id')
-  @UseGuards(CsrfGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @ApiHeader({
-    name: 'x-csrf-token',
-    description: 'CSRF token for CSRF protection.',
+    name: 'X-CSRF-TOKEN',
+    description: 'CSRF token for CSRF protection',
+    required: true,
   })
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'Deleted restaurant table successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Restaurant table not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async deleteTable(@Param('id') id: string) {

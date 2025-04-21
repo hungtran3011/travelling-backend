@@ -9,7 +9,6 @@ import { AuthModule } from './auth/auth.module';
 import { AccommodationsModule } from './accommodations/accommodations.module';
 import { SightseeingModule } from './sightseeing/sightseeing.module';
 import { ReservationsModule } from './reservations/reservations.module';
-// import { SupabaseModule } from './supabase/supabase.module';
 import { MediaModule } from './media/media.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
 

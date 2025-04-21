@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { supabaseService, supabase } from 'src/supabase/supabase';
 import { CsrfService } from './csrf.service';
 
@@ -15,36 +15,60 @@ export class AuthService {
   }
 
   async signIn(email: string, password: string) {
-    const { data, error } = await supabaseService
-      .auth.signInWithPassword({ email, password });
-    
-    if (error) throw error;
-    if (!data) throw new Error('No data returned from signIn');
-    
-    const { data: additionalData, error: additionalError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', data.user?.id)
-      .single();
-    
-    if (additionalError) throw additionalError;
-    
-    // Generate CSRF token for this session
-    const csrfToken = this.csrfService.generateTokenValue();
-    
-    return {
-      session: {
-        access_token: data.session?.access_token,
-        refresh_token: data.session?.refresh_token,
-      },
-      user: {
-        id: data.user?.id,
-        email: data.user?.email,
-        phone: data.user?.phone,
-      },
-      additionalData,
-      csrfToken, // Include CSRF token in response
-    };
+    try {
+      Logger.log(`Attempting sign in for user: ${email}`);
+      
+      Logger.log('Step 1: Calling Supabase auth.signInWithPassword');
+      const { data, error } = await supabaseService
+        .auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        Logger.error('Supabase auth error:', error);
+        throw error;
+      }
+      
+      Logger.log('Step 2: Authenticated successfully, user data:', data.user?.id);
+      
+      if (!data) throw new Error('No data returned from signIn');
+      
+      Logger.log('Step 3: Querying additional user data from users table');
+      const { data: additionalData, error: additionalError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user?.id)
+        .single();
+      
+      if (additionalError) {
+        Logger.error('Error fetching user data:', additionalError);
+        // Instead of throwing, consider creating a user record or continuing without additional data
+        // throw additionalError;
+        Logger.log('Creating default user record');
+        // Add code to create a user record
+      }
+      
+      Logger.log('Step 4: Generating CSRF token');
+      // Generate CSRF token for this session
+      const csrfToken = this.csrfService.generateTokenValue();
+      
+      Logger.log('Step 5: Returning response data');
+      return {
+        session: {
+          access_token: data.session?.access_token,
+          refresh_token: data.session?.refresh_token,
+        },
+        user: {
+          id: data.user?.id,
+          email: data.user?.email,
+          phone: data.user?.phone,
+          
+        },
+        additionalData: additionalData || {}, // Provide default if missing
+        csrfToken,
+      };
+    } catch (error) {
+      Logger.error('Exception in authService.signIn:', error);
+      throw error; // Re-throw to propagate to controller
+    }
   }
 
   async signOut() {

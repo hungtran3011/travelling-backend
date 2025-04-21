@@ -256,6 +256,80 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          cancelled_at: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          deposit_amount: number | null
+          end_datetime: string
+          guest_count: number
+          id: string
+          is_paid: boolean | null
+          item_id: string
+          item_type: string
+          notes: string | null
+          payment_method: string | null
+          special_requests: string | null
+          start_datetime: string
+          status: string
+          total_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          deposit_amount?: number | null
+          end_datetime: string
+          guest_count: number
+          id?: string
+          is_paid?: boolean | null
+          item_id: string
+          item_type: string
+          notes?: string | null
+          payment_method?: string | null
+          special_requests?: string | null
+          start_datetime: string
+          status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          deposit_amount?: number | null
+          end_datetime?: string
+          guest_count?: number
+          id?: string
+          is_paid?: boolean | null
+          item_id?: string
+          item_type?: string
+          notes?: string | null
+          payment_method?: string | null
+          special_requests?: string | null
+          start_datetime?: string
+          status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_menu_item: {
         Row: {
           created_at: string
@@ -442,6 +516,7 @@ export type Database = {
           id: string
           phone: string | null
           province: string | null
+          role: Database["public"]["Enums"]["roles"] | null
         }
         Insert: {
           avatar_url?: string | null
@@ -453,6 +528,7 @@ export type Database = {
           id?: string
           phone?: string | null
           province?: string | null
+          role?: Database["public"]["Enums"]["roles"] | null
         }
         Update: {
           avatar_url?: string | null
@@ -464,6 +540,7 @@ export type Database = {
           id?: string
           phone?: string | null
           province?: string | null
+          role?: Database["public"]["Enums"]["roles"] | null
         }
         Relationships: []
       }
@@ -475,7 +552,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      roles: "admin" | "user" | "anon" | "manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -593,6 +670,8 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      roles: ["admin", "user", "anon", "manager"],
+    },
   },
 } as const

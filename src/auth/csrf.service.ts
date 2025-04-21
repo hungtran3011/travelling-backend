@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { doubleCsrf, CsrfTokenCreator } from 'csrf-csrf';
 import { Request, Response } from 'express';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class CsrfService {
@@ -15,7 +15,7 @@ export class CsrfService {
   
   constructor() {
     const { generateToken, doubleCsrfProtection } = doubleCsrf({
-      getSecret: () => process.env.CSRF_SECRET || 'your-fallback-secret-should-be-complex',
+      getSecret: () => process.env.CSRF_SECRET || 'iAOqYtaI97Pchb3HZkKVTXfZw25zPjCo7YTJjgkcmFYeeTHr6Ty3b1uGqaBldpewyVLGzRiVG0QEiWkj4U6JfzQjX55C3ujTZuMdSzhdcO83T15j40zjbE8XqigdFdTYe',
       cookieName: 'x-csrf-token',
       cookieOptions: {
         httpOnly: true,
@@ -44,6 +44,7 @@ export class CsrfService {
   generateTokenValue(): string {
     // Generate a token value only, without setting cookies
     // This is for cases where you need the token value but don't have req/res
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(64).toString('hex');
   }
+  
 }
